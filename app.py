@@ -12,7 +12,7 @@ genai.configure(api_key=os.getenv("AIzaSyBpkJUktKt3SytInPIqMbRxH5wMkb34Mzg"))
 model = genai.GenerativeModel("gemini-pro")
 
 # Initialize Streamlit app
-st.set_page_config(page_title="POOPOO LAND")
+st.set_page_config(page_title="change")
 st.header("everything is simple")
 
 input_text = st.text_area("Input: ", "type in things you want to know about.")
