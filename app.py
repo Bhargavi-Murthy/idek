@@ -19,7 +19,7 @@ input_text = st.text_area("Input: ", "type in things you want to know about.")
 submit = st.button("Explain this to a five-year-old")
 
 if submit and input_text:
-    response = model.generate_content([input_text, "Explain this to a college student in the style of J.K.Rowling."])
+    response = model.generate_content([input_text, "Explain this to a five year old."])
     st.subheader("The Response is")
     for chunk in response:
         st.write(chunk.text)
