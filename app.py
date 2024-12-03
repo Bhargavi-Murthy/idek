@@ -114,12 +114,46 @@ if file1 and file2:
 
                 st.altair_chart(bar_chart, use_container_width=True)
 
-            # Allow download of merged results
-            st.subheader("Download Merged Data")
+            # Calculate differences for each common variable
+            for var in common_vars:
+                merged_df[f"{var}_difference"] = (
+                    merged_df[f"{var}_file1"] - merged_df[f"{var}_file2"]
+                )
+
+            # Display comparison results
+            st.write("Comparison Results (All Variables):")
+            st.dataframe(merged_df)
+
+            # Data Visualization
+            st.subheader("Visualize Differences Across All Variables")
+            variable_to_plot = st.selectbox(
+                "Select a variable to visualize differences:", list(common_vars)
+            )
+
+            if variable_to_plot:
+                chart_data = merged_df[[time_column, f"{variable_to_plot}_difference"]]
+                chart_data = chart_data.rename(
+                    columns={f"{variable_to_plot}_difference": "Difference"}
+                )
+
+                # Line chart using Altair
+                line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+                    x=alt.X(time_column, title="Time Period"),
+                    y=alt.Y("Difference", title=f"{variable_to_plot} Difference"),
+                    tooltip=["Difference"]
+                ).properties(
+                    title=f"Difference in {variable_to_plot} Over Time",
+                    width=700,
+                    height=400
+                )
+
+                st.altair_chart(line_chart, use_container_width=True)
+
+            # Allow download of comparison results
             csv = merged_df.to_csv(index=False)
             st.download_button(
-                label="Download Merged Data",
+                label="Download Comparison Results",
                 data=csv,
-                file_name="merged_data.csv",
+                file_name="comparison_results.csv",
                 mime="text/csv"
             )
