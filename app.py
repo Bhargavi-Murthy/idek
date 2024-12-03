@@ -1,11 +1,12 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
+import datetime as dt
 
 # App title and heading
-st.set_page_config(page_title="Data Comparison App")
-st.title("Dynamic Data Comparison Tool")
-st.header("Upload two files to compare variable values across time periods.")
+st.set_page_config(page_title="Data Comparison and Analysis Tool")
+st.title("Dynamic Data Comparison and Analysis Tool")
+st.header("Upload two files to compare and analyze variable values across time periods.")
 
 # Upload files
 file1 = st.file_uploader("Upload the first file", type=["csv", "xlsx"])
@@ -32,6 +33,10 @@ if file1 and file2:
     if time_column not in df1.columns or time_column not in df2.columns:
         st.error(f"Column '{time_column}' must exist in both files.")
     else:
+        # Convert Period column to datetime format
+        df1[time_column] = pd.to_datetime(df1[time_column])
+        df2[time_column] = pd.to_datetime(df2[time_column])
+
         # Identify common variable columns
         common_vars = set(df1.columns) & set(df2.columns) - {time_column}
 
@@ -82,6 +87,36 @@ if file1 and file2:
                 )
 
                 st.altair_chart(line_chart, use_container_width=True)
+
+            # Q&A Feature
+            st.subheader("Ask Questions About the Data")
+            question = st.text_input("Ask a question (e.g., Total share of HTS_PLY in Q1):")
+            if question:
+                # Identify the variable and time period from the question
+                quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+                variable = None
+                quarter = None
+
+                for var in common_vars:
+                    if var in question:
+                        variable = var
+                        break
+
+                for q, months in quarter_map.items():
+                    if q in question:
+                        quarter = months
+                        break
+
+                if variable and quarter:
+                    # Filter data for the quarter
+                    quarter_data = merged_df[
+                        merged_df[time_column].dt.month.isin(quarter)
+                    ]
+                    total_share = quarter_data[f"{variable}_file1"].sum()
+
+                    st.write(f"Total share of **{variable}** in the selected quarter: **{total_share:.2f}**")
+                else:
+                    st.error("Could not identify the variable or quarter in the question. Please rephrase.")
 
             # Allow download of results
             csv = merged_df.to_csv(index=False)
