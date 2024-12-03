@@ -1,7 +1,13 @@
 import pandas as pd
 import streamlit as st
+import altair as alt
 
-# Upload and read files
+# App title and heading
+st.set_page_config(page_title="Data Comparison App")
+st.title("Dynamic Data Comparison Tool")
+st.header("Upload two files to compare variable values across time periods.")
+
+# Upload files
 file1 = st.file_uploader("Upload the first file", type=["csv", "xlsx"])
 file2 = st.file_uploader("Upload the second file", type=["csv", "xlsx"])
 
@@ -51,6 +57,31 @@ if file1 and file2:
             # Display comparison
             st.write("Comparison Results:")
             st.dataframe(merged_df)
+
+            # Data Visualization
+            st.subheader("Visualize Differences")
+            variable_to_plot = st.selectbox(
+                "Select a variable to visualize differences:", list(common_vars)
+            )
+
+            if variable_to_plot:
+                chart_data = merged_df[[time_column, f"{variable_to_plot}_difference"]]
+                chart_data = chart_data.rename(
+                    columns={f"{variable_to_plot}_difference": "Difference"}
+                )
+
+                # Line chart using Altair
+                line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+                    x=alt.X(time_column, title="Time Period"),
+                    y=alt.Y("Difference", title=f"{variable_to_plot} Difference"),
+                    tooltip=["Difference"]
+                ).properties(
+                    title=f"Difference in {variable_to_plot} Over Time",
+                    width=700,
+                    height=400
+                )
+
+                st.altair_chart(line_chart, use_container_width=True)
 
             # Allow download of results
             csv = merged_df.to_csv(index=False)
