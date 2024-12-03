@@ -1,12 +1,11 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-import datetime as dt
 
 # App title and heading
-st.set_page_config(page_title="Data Comparison and Analysis Tool")
-st.title("Dynamic Data Comparison and Analysis Tool")
-st.header("Upload two files to compare and analyze variable values across time periods.")
+st.set_page_config(page_title="Data Comparison App", layout="wide")
+st.title("Dynamic Data Comparison Tool")
+st.header("Upload two files to compare variable values across time periods.")
 
 # Upload files
 file1 = st.file_uploader("Upload the first file", type=["csv", "xlsx"])
@@ -33,7 +32,7 @@ if file1 and file2:
     if time_column not in df1.columns or time_column not in df2.columns:
         st.error(f"Column '{time_column}' must exist in both files.")
     else:
-        # Convert Period column to datetime format
+        # Convert the period column to datetime
         df1[time_column] = pd.to_datetime(df1[time_column])
         df2[time_column] = pd.to_datetime(df2[time_column])
 
@@ -53,76 +52,74 @@ if file1 and file2:
                 suffixes=("_file1", "_file2")
             )
 
-            # Calculate differences for each variable
-            for var in common_vars:
-                merged_df[f"{var}_difference"] = (
-                    merged_df[f"{var}_file1"] - merged_df[f"{var}_file2"]
-                )
+            # Add date filters for two timeframes
+            st.sidebar.header("Quarterly Comparison")
+            with st.sidebar:
+                st.subheader("Select Timeframe 1")
+                start_date_1 = st.date_input("Start Date (Timeframe 1)", value=df1[time_column].min())
+                end_date_1 = st.date_input("End Date (Timeframe 1)", value=df1[time_column].max())
 
-            # Display comparison
-            st.write("Comparison Results:")
-            st.dataframe(merged_df)
+                st.subheader("Select Timeframe 2")
+                start_date_2 = st.date_input("Start Date (Timeframe 2)", value=df2[time_column].min())
+                end_date_2 = st.date_input("End Date (Timeframe 2)", value=df2[time_column].max())
 
-            # Data Visualization
-            st.subheader("Visualize Differences")
-            variable_to_plot = st.selectbox(
-                "Select a variable to visualize differences:", list(common_vars)
+            # Filter data for both timeframes
+            df_timeframe1 = merged_df[
+                (merged_df[time_column] >= pd.Timestamp(start_date_1)) &
+                (merged_df[time_column] <= pd.Timestamp(end_date_1))
+            ]
+            df_timeframe2 = merged_df[
+                (merged_df[time_column] >= pd.Timestamp(start_date_2)) &
+                (merged_df[time_column] <= pd.Timestamp(end_date_2))
+            ]
+
+            # Select variable for comparison
+            selected_variable = st.selectbox(
+                "Select a variable for quarterly comparison:", list(common_vars)
             )
 
-            if variable_to_plot:
-                chart_data = merged_df[[time_column, f"{variable_to_plot}_difference"]]
-                chart_data = chart_data.rename(
-                    columns={f"{variable_to_plot}_difference": "Difference"}
-                )
+            if selected_variable:
+                # Calculate total values for the selected variable in both timeframes
+                total_timeframe1 = df_timeframe1[f"{selected_variable}_file1"].sum()
+                total_timeframe2 = df_timeframe2[f"{selected_variable}_file2"].sum()
 
-                # Line chart using Altair
-                line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
-                    x=alt.X(time_column, title="Time Period"),
-                    y=alt.Y("Difference", title=f"{variable_to_plot} Difference"),
-                    tooltip=["Difference"]
+                # Compute change
+                absolute_change = total_timeframe2 - total_timeframe1
+                percentage_change = (absolute_change / total_timeframe1) * 100 if total_timeframe1 != 0 else None
+
+                # Display results
+                st.subheader("Quarterly Comparison Results")
+                st.write(f"**Total for Timeframe 1 ({start_date_1} to {end_date_1}):** {total_timeframe1}")
+                st.write(f"**Total for Timeframe 2 ({start_date_2} to {end_date_2}):** {total_timeframe2}")
+                st.write(f"**Absolute Change:** {absolute_change}")
+                st.write(f"**Percentage Change:** {percentage_change:.2f}%")
+
+                # Visualization
+                st.subheader("Quarterly Comparison Visualization")
+                comparison_df = pd.DataFrame({
+                    "Timeframe": ["Timeframe 1", "Timeframe 2"],
+                    selected_variable: [total_timeframe1, total_timeframe2]
+                })
+
+                bar_chart = alt.Chart(comparison_df).mark_bar().encode(
+                    x="Timeframe",
+                    y=selected_variable,
+                    color="Timeframe",
+                    tooltip=[selected_variable]
                 ).properties(
-                    title=f"Difference in {variable_to_plot} Over Time",
-                    width=700,
+                    title=f"Comparison of {selected_variable}",
+                    width=600,
                     height=400
                 )
 
-                st.altair_chart(line_chart, use_container_width=True)
+                st.altair_chart(bar_chart, use_container_width=True)
 
-            # Q&A Feature
-            st.subheader("Ask Questions About the Data")
-            question = st.text_input("Ask a question (e.g., Total share of HTS_PLY in Q1):")
-            if question:
-                # Identify the variable and time period from the question
-                quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
-                variable = None
-                quarter = None
-
-                for var in common_vars:
-                    if var in question:
-                        variable = var
-                        break
-
-                for q, months in quarter_map.items():
-                    if q in question:
-                        quarter = months
-                        break
-
-                if variable and quarter:
-                    # Filter data for the quarter
-                    quarter_data = merged_df[
-                        merged_df[time_column].dt.month.isin(quarter)
-                    ]
-                    total_share = quarter_data[f"{variable}_file1"].sum()
-
-                    st.write(f"Total share of **{variable}** in the selected quarter: **{total_share:.2f}**")
-                else:
-                    st.error("Could not identify the variable or quarter in the question. Please rephrase.")
-
-            # Allow download of results
+            # Allow download of merged results
+            st.subheader("Download Merged Data")
             csv = merged_df.to_csv(index=False)
             st.download_button(
-                label="Download Comparison Results",
+                label="Download Merged Data",
                 data=csv,
-                file_name="comparison_results.csv",
+                file_name="merged_data.csv",
                 mime="text/csv"
             )
