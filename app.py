@@ -155,8 +155,6 @@ if file1 and file2:
         on=time_column,
         suffixes=("_file1", "_file2")
         )
-
-        st.write(merged_df)
      
         for var in common_columns:
             merged_df[f"{var}_difference"] = merged_df[f"{var}_file2"] - merged_df[f"{var}_file1"]
@@ -167,7 +165,9 @@ if file1 and file2:
         # Iterate through each common column to calculate totals and differences
         for var in common_columns:
             total_file1 = merged_df[f"{var}_file1"].sum()
+            st.write(total_file1)
             total_file2 = merged_df[f"{var}_file2"].sum()
+            st.write(total_file2)
             absolute_change = total_file2 - total_file1
             percentage_change = (absolute_change / total_file1 * 100) if total_file1 != 0 else None  # Avoid division by zero
         # Append the results as a dictionary
