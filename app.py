@@ -41,6 +41,8 @@ if file1 and file2:
     else:
         # Convert the period column to datetime
         ads_df[time_column] = pd.to_datetime(ads_df[time_column])
+        df1[time_column] = pd.to_datetime(df1[time_column])
+        df2[time_column] = pd.to_datetime(df2[time_column])
 
         # Add date filters for two timeframes
         st.sidebar.subheader("Quarterly Comparison")
@@ -128,3 +130,44 @@ if file1 and file2:
                 file_name="comparison_results.csv",
                 mime="text/csv"
             )
+
+        # **New Feature**: Compare both files across the selected timeframes
+        st.subheader("Compare Two Files Across Timeframes")
+
+        # Merge the two files on the time column
+        merged_df = pd.merge(
+            df1[[time_column] + variable_columns],
+            df2[[time_column] + variable_columns],
+            on=time_column,
+            suffixes=("_file1", "_file2")
+        )
+
+        # Compute differences for each variable
+        for var in variable_columns:
+            merged_df[f"{var}_difference"] = (
+                merged_df[f"{var}_file2"] - merged_df[f"{var}_file1"]
+            )
+
+        # Line chart for visualization of differences
+        st.subheader("Visualize Differences Between Files")
+        variable_for_line_chart = st.selectbox(
+            "Select a variable to visualize differences between files:", variable_columns
+        )
+
+        if variable_for_line_chart:
+            chart_data = merged_df[[time_column, f"{variable_for_line_chart}_difference"]].rename(
+                columns={f"{variable_for_line_chart}_difference": "Difference"}
+            )
+
+            # Line chart for differences over time
+            line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+                x=alt.X(time_column, title="Time Period"),
+                y=alt.Y("Difference", title=f"Difference in {variable_for_line_chart}"),
+                tooltip=["Difference"]
+            ).properties(
+                title=f"Difference in {variable_for_line_chart} Over Time Between Files",
+                width=700,
+                height=400
+            )
+
+            st.altair_chart(line_chart, use_container_width=True)
