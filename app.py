@@ -155,7 +155,9 @@ if file1 and file2:
         on=time_column,
         suffixes=("_file1", "_file2")
         )
- 
+
+        st.write(merged_df)
+     
         for var in common_columns:
             merged_df[f"{var}_difference"] = merged_df[f"{var}_file2"] - merged_df[f"{var}_file1"]
  
