@@ -226,6 +226,6 @@ if file1 and file2:
     
        # Render the chart in Streamlit
            st.altair_chart(line_chart, use_container_width=True)
-       else: 
+        else: 
        #  Display an error message if columns are missing
            st.error(f"Required columns for {variable_for_line_chart} are not present in the data.")
