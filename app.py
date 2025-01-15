@@ -164,6 +164,7 @@ if file1 and file2:
  
         # Iterate through each common column to calculate totals and differences
         for var in common_columns:
+            st.write(var)
             total_file1 = merged_df[f"{var}_file1"].sum()
             st.write(total_file1)
             total_file2 = merged_df[f"{var}_file2"].sum()
