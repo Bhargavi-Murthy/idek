@@ -29,48 +29,57 @@ if file1 and file2:
 
     # Ensure time column is named consistently
     time_column = "period"
+    ad_column = "ad"  # Replace with the actual column name for ads
     if time_column not in df1.columns or time_column not in df2.columns:
         st.error(f"Column '{time_column}' must exist in both files.")
+    elif ad_column not in df1.columns or ad_column not in df2.columns:
+        st.error(f"Column '{ad_column}' must exist in both files.")
     else:
         # Convert the period column to datetime
         df1[time_column] = pd.to_datetime(df1[time_column])
         df2[time_column] = pd.to_datetime(df2[time_column])
 
         # Identify common variable columns
-        common_vars = set(df1.columns) & set(df2.columns) - {time_column}
+        common_vars = set(df1.columns) & set(df2.columns) - {time_column, ad_column}
 
         if not common_vars:
             st.error("No common variable columns found between the two files.")
         else:
             st.write(f"Common variables: {common_vars}")
 
-            # Merge files on Period and common variables
+            # Merge files on Period, Ad, and common variables
             merged_df = pd.merge(
-                df1[[time_column] + list(common_vars)],
-                df2[[time_column] + list(common_vars)],
-                on=time_column,
+                df1[[time_column, ad_column] + list(common_vars)],
+                df2[[time_column, ad_column] + list(common_vars)],
+                on=[time_column, ad_column],
                 suffixes=("_file1", "_file2")
             )
+
+            # Dropdown to select ad
+            selected_ad = st.selectbox("Select an Ad for Quarterly Comparison:", merged_df[ad_column].unique())
+
+            # Filter data for the selected ad
+            filtered_df = merged_df[merged_df[ad_column] == selected_ad]
 
             # Add date filters for two timeframes
             st.sidebar.header("Quarterly Comparison")
             with st.sidebar:
                 st.subheader("Select Timeframe 1")
-                start_date_1 = st.date_input("Start Date (Timeframe 1)", value=df1[time_column].min())
-                end_date_1 = st.date_input("End Date (Timeframe 1)", value=df1[time_column].max())
+                start_date_1 = st.date_input("Start Date (Timeframe 1)", value=filtered_df[time_column].min())
+                end_date_1 = st.date_input("End Date (Timeframe 1)", value=filtered_df[time_column].max())
 
                 st.subheader("Select Timeframe 2")
-                start_date_2 = st.date_input("Start Date (Timeframe 2)", value=df2[time_column].min())
-                end_date_2 = st.date_input("End Date (Timeframe 2)", value=df2[time_column].max())
+                start_date_2 = st.date_input("Start Date (Timeframe 2)", value=filtered_df[time_column].min())
+                end_date_2 = st.date_input("End Date (Timeframe 2)", value=filtered_df[time_column].max())
 
             # Filter data for both timeframes
-            df_timeframe1 = merged_df[
-                (merged_df[time_column] >= pd.Timestamp(start_date_1)) &
-                (merged_df[time_column] <= pd.Timestamp(end_date_1))
+            df_timeframe1 = filtered_df[
+                (filtered_df[time_column] >= pd.Timestamp(start_date_1)) &
+                (filtered_df[time_column] <= pd.Timestamp(end_date_1))
             ]
-            df_timeframe2 = merged_df[
-                (merged_df[time_column] >= pd.Timestamp(start_date_2)) &
-                (merged_df[time_column] <= pd.Timestamp(end_date_2))
+            df_timeframe2 = filtered_df[
+                (filtered_df[time_column] >= pd.Timestamp(start_date_2)) &
+                (filtered_df[time_column] <= pd.Timestamp(end_date_2))
             ]
 
             # Select variable for comparison
@@ -89,6 +98,7 @@ if file1 and file2:
 
                 # Display results
                 st.subheader("Quarterly Comparison Results")
+                st.write(f"**Selected Ad:** {selected_ad}")
                 st.write(f"**Total for Timeframe 1 ({start_date_1} to {end_date_1}):** {total_timeframe1}")
                 st.write(f"**Total for Timeframe 2 ({start_date_2} to {end_date_2}):** {total_timeframe2}")
                 st.write(f"**Absolute Change:** {absolute_change}")
@@ -107,50 +117,15 @@ if file1 and file2:
                     color="Timeframe",
                     tooltip=[selected_variable]
                 ).properties(
-                    title=f"Comparison of {selected_variable}",
+                    title=f"Comparison of {selected_variable} for Ad: {selected_ad}",
                     width=600,
                     height=400
                 )
 
                 st.altair_chart(bar_chart, use_container_width=True)
 
-            # Calculate differences for each common variable
-            for var in common_vars:
-                merged_df[f"{var}_difference"] = (
-                    merged_df[f"{var}_file1"] - merged_df[f"{var}_file2"]
-                )
-
-            # Display comparison results
-            st.write("Comparison Results (All Variables):")
-            st.dataframe(merged_df)
-
-            # Data Visualization
-            st.subheader("Visualize Differences Across All Variables")
-            variable_to_plot = st.selectbox(
-                "Select a variable to visualize differences:", list(common_vars)
-            )
-
-            if variable_to_plot:
-                chart_data = merged_df[[time_column, f"{variable_to_plot}_difference"]]
-                chart_data = chart_data.rename(
-                    columns={f"{variable_to_plot}_difference": "Difference"}
-                )
-
-                # Line chart using Altair
-                line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
-                    x=alt.X(time_column, title="Time Period"),
-                    y=alt.Y("Difference", title=f"{variable_to_plot} Difference"),
-                    tooltip=["Difference"]
-                ).properties(
-                    title=f"Difference in {variable_to_plot} Over Time",
-                    width=700,
-                    height=400
-                )
-
-                st.altair_chart(line_chart, use_container_width=True)
-
             # Allow download of comparison results
-            csv = merged_df.to_csv(index=False)
+            csv = filtered_df.to_csv(index=False)
             st.download_button(
                 label="Download Comparison Results",
                 data=csv,
