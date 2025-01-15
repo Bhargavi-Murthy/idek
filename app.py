@@ -199,30 +199,35 @@ if file1 and file2:
         )
  
         if variable_for_line_chart:
-        # Prepare data for both files
-            chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]].melt(
-                id_vars=[time_column],
-                value_vars=[f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"],
-                var_name="File",
-                value_name="Value"
-                )
+            # Check if the required columns exist
+            if all(col in merged_df.columns for col in [time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]):
+            # Filter relevant columns
+            chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]]
  
-            # Rename the file labels for clarity
-            chart_data["File"] = chart_data["File"].replace({
-                f"{variable_for_line_chart}_file1": "File 1",
-                f"{variable_for_line_chart}_file2": "File 2"
-                })
+            # Create the plot
+            plt.figure(figsize=(10, 6))
+            plt.plot(
+            chart_data[time_column],
+            chart_data[f"{variable_for_line_chart}_file1"],
+            marker="o",
+            label="File 1",
+            color="blue"
+          )
+            plt.plot(
+            chart_data[time_column],
+            chart_data[f"{variable_for_line_chart}_file2"],
+            marker="o",
+            label="File 2",
+            color="orange"
+          )
  
-            # Line chart for both file values over time
-            line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
-                x=alt.X(time_column, title="Time Period"),
-                y=alt.Y("Value", title=f"{variable_for_line_chart} Values"),
-                color=alt.Color("File", legend=alt.Legend(title="File")),
-                tooltip=["Time Period", "File", "Value"]
-                ).properties(
-                title=f"Comparison of {variable_for_line_chart} Over Time Between Files",
-                width=700,
-                height=400
-                )
+          # Add chart elements
+            plt.title(f"Comparison of {variable_for_line_chart} Over Time", fontsize=14)
+            plt.xlabel("Time Period", fontsize=12)
+            plt.ylabel(f"{variable_for_line_chart} Values", fontsize=12)
+            plt.legend(title="File")
+            plt.grid(visible=True, linestyle='--', alpha=0.7)
+            plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
  
-            st.altair_chart(line_chart, use_container_width=True)
+          # Render the plot in Streamlit
+           st.pyplot(plt)
