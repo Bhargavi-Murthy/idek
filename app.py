@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-import matplotlib.pyplot as plt
  
 # App title and heading
 st.set_page_config(page_title="Data Comparison App", layout="wide")
@@ -199,36 +198,34 @@ if file1 and file2:
             "Select a variable to visualize differences between files:", variable_list_2
         )
  
-        if variable_for_line_chart:
-            # Check if the required columns exist
-            if all(col in merged_df.columns for col in [time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]):
-            # Filter relevant columns
-                chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]]
- 
-            # Create the plot
-                plt.figure(figsize=(10, 6))
-                plt.plot(
-                chart_data[time_column],
-                chart_data[f"{variable_for_line_chart}_file1"],
-                marker="o",
-                label="File 1",
-                color="blue"
-               )
-                plt.plot(
-                chart_data[time_column],
-                chart_data[f"{variable_for_line_chart}_file2"],
-                marker="o",
-                label="File 2",
-                color="orange"
-              )
-     
-          # Add chart elements
-                plt.title(f"Comparison of {variable_for_line_chart} Over Time", fontsize=14)
-                plt.xlabel("Time Period", fontsize=12)
-                plt.ylabel(f"{variable_for_line_chart} Values", fontsize=12)
-                plt.legend(title="File")
-                plt.grid(visible=True, linestyle='--', alpha=0.7)
-                plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-     
-              # Render the plot in Streamlit
-                st.pyplot(plt)
+        if all(col in merged_df.columns for col in [time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]):
+    # Filter relevant columns and prepare data for Altair
+           chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]].melt(
+           id_vars=[time_column],
+           value_vars=[f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"],
+           var_name="File",
+           value_name="Value"
+       )
+       # Rename the file labels for clarity
+           chart_data["File"] = chart_data["File"].replace({
+           f"{variable_for_line_chart}_file1": "File 1",
+           f"{variable_for_line_chart}_file2": "File 2"
+       })
+    
+       # Create Altair line chart
+           line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+           x=alt.X(time_column, title="Time Period"),
+           y=alt.Y("Value", title=f"{variable_for_line_chart} Values"),
+           color=alt.Color("File", legend=alt.Legend(title="File")),
+           tooltip=["File", time_column, "Value"]
+              ).properties(
+           title=f"Comparison of {variable_for_line_chart} Over Time Between Files",
+           width=700,
+           height=400
+       )
+    
+       # Render the chart in Streamlit
+           st.altair_chart(line_chart, use_container_width=True)
+       else: 
+       #  Display an error message if columns are missing
+           st.error(f"Required columns for {variable_for_line_chart} are not present in the data.")
