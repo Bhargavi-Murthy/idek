@@ -93,21 +93,27 @@ if file1 and file2:
             st.subheader("Quarterly Comparison Results")
             st.write(comparison_results)
 
-            # Visualization
-            st.subheader("Quarterly Comparison Visualization")
-            for variable in variable_columns:
+            # Visualization with dropdown selection
+            st.subheader("Visualize Differences Across Variables")
+            selected_variable = st.selectbox(
+                "Select a variable for visualization:", variable_columns
+            )
+
+            if selected_variable:
+                # Prepare data for the selected variable
                 comparison_df = pd.DataFrame({
                     "Timeframe": ["Timeframe 1", "Timeframe 2"],
-                    "Total": [totals_timeframe1[variable], totals_timeframe2[variable]]
+                    "Total": [totals_timeframe1[selected_variable], totals_timeframe2[selected_variable]]
                 })
 
+                # Bar chart for the selected variable
                 bar_chart = alt.Chart(comparison_df).mark_bar().encode(
                     x="Timeframe",
                     y="Total",
                     color="Timeframe",
                     tooltip=["Total"]
                 ).properties(
-                    title=f"Comparison of {variable}",
+                    title=f"Comparison of {selected_variable}",
                     width=600,
                     height=400
                 )
