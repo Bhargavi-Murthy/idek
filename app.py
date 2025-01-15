@@ -198,9 +198,9 @@ if file1 and file2:
             "Select a variable to visualize differences between files:", variable_list_2
         )
  
-       if variable_for_line_chart:
+        if variable_for_line_chart:
         # Prepare data for both files
-           chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]].melt(
+            chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]].melt(
                 id_vars=[time_column],
                 value_vars=[f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"],
                 var_name="File",
@@ -208,13 +208,13 @@ if file1 and file2:
                 )
  
             # Rename the file labels for clarity
-           chart_data["File"] = chart_data["File"].replace({
+            chart_data["File"] = chart_data["File"].replace({
                 f"{variable_for_line_chart}_file1": "File 1",
                 f"{variable_for_line_chart}_file2": "File 2"
                 })
  
             # Line chart for both file values over time
-           line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
+            line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
                 x=alt.X(time_column, title="Time Period"),
                 y=alt.Y("Value", title=f"{variable_for_line_chart} Values"),
                 color=alt.Color("File", legend=alt.Legend(title="File")),
@@ -225,4 +225,4 @@ if file1 and file2:
                 height=400
                 )
  
-           st.altair_chart(line_chart, use_container_width=True)
+            st.altair_chart(line_chart, use_container_width=True)
