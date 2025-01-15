@@ -179,6 +179,7 @@ if file1 and file2:
             "Absolute Change": absolute_change,
             "Percentage Change (%)": percentage_change
         })
+        st.write(comparison_data)
  
         # Convert the list of dictionaries to a DataFrame
         comparison_table = pd.DataFrame(comparison_data)
