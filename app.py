@@ -202,32 +202,32 @@ if file1 and file2:
             # Check if the required columns exist
             if all(col in merged_df.columns for col in [time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]):
             # Filter relevant columns
-            chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]]
+                chart_data = merged_df[[time_column, f"{variable_for_line_chart}_file1", f"{variable_for_line_chart}_file2"]]
  
             # Create the plot
-            plt.figure(figsize=(10, 6))
-            plt.plot(
-            chart_data[time_column],
-            chart_data[f"{variable_for_line_chart}_file1"],
-            marker="o",
-            label="File 1",
-            color="blue"
-          )
-            plt.plot(
-            chart_data[time_column],
-            chart_data[f"{variable_for_line_chart}_file2"],
-            marker="o",
-            label="File 2",
-            color="orange"
-          )
- 
+                plt.figure(figsize=(10, 6))
+                plt.plot(
+                chart_data[time_column],
+                chart_data[f"{variable_for_line_chart}_file1"],
+                marker="o",
+                label="File 1",
+                color="blue"
+               )
+                plt.plot(
+                chart_data[time_column],
+                chart_data[f"{variable_for_line_chart}_file2"],
+                marker="o",
+                label="File 2",
+                color="orange"
+              )
+     
           # Add chart elements
-            plt.title(f"Comparison of {variable_for_line_chart} Over Time", fontsize=14)
-            plt.xlabel("Time Period", fontsize=12)
-            plt.ylabel(f"{variable_for_line_chart} Values", fontsize=12)
-            plt.legend(title="File")
-            plt.grid(visible=True, linestyle='--', alpha=0.7)
-            plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
- 
-          # Render the plot in Streamlit
-           st.pyplot(plt)
+                plt.title(f"Comparison of {variable_for_line_chart} Over Time", fontsize=14)
+                plt.xlabel("Time Period", fontsize=12)
+                plt.ylabel(f"{variable_for_line_chart} Values", fontsize=12)
+                plt.legend(title="File")
+                plt.grid(visible=True, linestyle='--', alpha=0.7)
+                plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+     
+              # Render the plot in Streamlit
+               st.pyplot(plt)
