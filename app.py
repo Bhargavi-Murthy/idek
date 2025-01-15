@@ -191,6 +191,7 @@ if file1 and file2:
         st.write(filtered_comparison)
         variable_list_2 = filtered_comparison["Variable"].tolist()
  
+        
         # Line chart for visualization of differences
         st.subheader("Visualize Differences Between Files")
         variable_for_line_chart = st.selectbox(
