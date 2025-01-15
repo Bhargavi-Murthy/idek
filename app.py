@@ -230,4 +230,4 @@ if file1 and file2:
                 plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
      
               # Render the plot in Streamlit
-               st.pyplot(plt)
+                st.pyplot(plt)
