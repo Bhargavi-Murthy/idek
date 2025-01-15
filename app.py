@@ -42,70 +42,83 @@ if file1 and file2:
         # Convert the period column to datetime
         ads_df[time_column] = pd.to_datetime(ads_df[time_column])
 
-        # Allow users to select variables for comparison
+        # Add date filters for two timeframes
+        st.sidebar.subheader("Quarterly Comparison")
+        with st.sidebar:
+            st.subheader("Select Timeframe 1")
+            start_date_1 = st.date_input("Start Date (Timeframe 1)", value=ads_df[time_column].min())
+            end_date_1 = st.date_input("End Date (Timeframe 1)", value=ads_df[time_column].max())
+
+            st.subheader("Select Timeframe 2")
+            start_date_2 = st.date_input("Start Date (Timeframe 2)", value=ads_df[time_column].min())
+            end_date_2 = st.date_input("End Date (Timeframe 2)", value=ads_df[time_column].max())
+
+        # Filter data for both timeframes
+        df_timeframe1 = ads_df[
+            (ads_df[time_column] >= pd.Timestamp(start_date_1)) &
+            (ads_df[time_column] <= pd.Timestamp(end_date_1))
+        ]
+        df_timeframe2 = ads_df[
+            (ads_df[time_column] >= pd.Timestamp(start_date_2)) &
+            (ads_df[time_column] <= pd.Timestamp(end_date_2))
+        ]
+
+        # Identify all variables excluding the time column
         variable_columns = list(ads_df.columns)
-        variable_columns.remove(time_column)  # Exclude the time column from selection
+        variable_columns.remove(time_column)
 
-        selected_variable = st.sidebar.selectbox(
-            "Select a variable for quarterly comparison:", variable_columns
-        )
+        if not variable_columns:
+            st.warning("No variables available for comparison.")
+        else:
+            # Compute totals for all variables in both timeframes
+            totals_timeframe1 = df_timeframe1[variable_columns].sum()
+            totals_timeframe2 = df_timeframe2[variable_columns].sum()
 
-        if selected_variable:
-            # Add date filters for two timeframes
-            st.sidebar.subheader("Quarterly Comparison")
-            with st.sidebar:
-                st.subheader("Select Timeframe 1")
-                start_date_1 = st.date_input("Start Date (Timeframe 1)", value=ads_df[time_column].min())
-                end_date_1 = st.date_input("End Date (Timeframe 1)", value=ads_df[time_column].max())
+            # Compute differences for all variables
+            absolute_changes = totals_timeframe2 - totals_timeframe1
+            percentage_changes = (
+                (absolute_changes / totals_timeframe1) * 100
+            ).replace([float('inf'), -float('inf')], None)  # Handle divide-by-zero cases
 
-                st.subheader("Select Timeframe 2")
-                start_date_2 = st.date_input("Start Date (Timeframe 2)", value=ads_df[time_column].min())
-                end_date_2 = st.date_input("End Date (Timeframe 2)", value=ads_df[time_column].max())
-
-            # Filter data for both timeframes
-            df_timeframe1 = ads_df[
-                (ads_df[time_column] >= pd.Timestamp(start_date_1)) &
-                (ads_df[time_column] <= pd.Timestamp(end_date_1))
-            ]
-            df_timeframe2 = ads_df[
-                (ads_df[time_column] >= pd.Timestamp(start_date_2)) &
-                (ads_df[time_column] <= pd.Timestamp(end_date_2))
-            ]
-
-            # Calculate total values for the selected variable in both timeframes
-            total_timeframe1 = df_timeframe1[selected_variable].sum()
-            total_timeframe2 = df_timeframe2[selected_variable].sum()
-
-            # Compute change
-            absolute_change = total_timeframe2 - total_timeframe1
-            percentage_change = (absolute_change / total_timeframe1) * 100 if total_timeframe1 != 0 else None
+            # Combine results into a DataFrame for display
+            comparison_results = pd.DataFrame({
+                "Variable": variable_columns,
+                "Total (Timeframe 1)": totals_timeframe1.values,
+                "Total (Timeframe 2)": totals_timeframe2.values,
+                "Absolute Change": absolute_changes.values,
+                "Percentage Change (%)": percentage_changes.values
+            })
 
             # Display results
             st.subheader("Quarterly Comparison Results")
-            st.write(f"**Total for Timeframe 1 ({start_date_1} to {end_date_1}):** {total_timeframe1}")
-            st.write(f"**Total for Timeframe 2 ({start_date_2} to {end_date_2}):** {total_timeframe2}")
-            st.write(f"**Absolute Change:** {absolute_change}")
-            st.write(f"**Percentage Change:** {percentage_change:.2f}%")
+            st.write(comparison_results)
 
             # Visualization
             st.subheader("Quarterly Comparison Visualization")
-            comparison_df = pd.DataFrame({
-                "Timeframe": ["Timeframe 1", "Timeframe 2"],
-                selected_variable: [total_timeframe1, total_timeframe2]
-            })
+            for variable in variable_columns:
+                comparison_df = pd.DataFrame({
+                    "Timeframe": ["Timeframe 1", "Timeframe 2"],
+                    "Total": [totals_timeframe1[variable], totals_timeframe2[variable]]
+                })
 
-            bar_chart = alt.Chart(comparison_df).mark_bar().encode(
-                x="Timeframe",
-                y=selected_variable,
-                color="Timeframe",
-                tooltip=[selected_variable]
-            ).properties(
-                title=f"Comparison of {selected_variable}",
-                width=600,
-                height=400
+                bar_chart = alt.Chart(comparison_df).mark_bar().encode(
+                    x="Timeframe",
+                    y="Total",
+                    color="Timeframe",
+                    tooltip=["Total"]
+                ).properties(
+                    title=f"Comparison of {variable}",
+                    width=600,
+                    height=400
+                )
+
+                st.altair_chart(bar_chart, use_container_width=True)
+
+            # Allow download of comparison results
+            csv = comparison_results.to_csv(index=False)
+            st.download_button(
+                label="Download Comparison Results",
+                data=csv,
+                file_name="comparison_results.csv",
+                mime="text/csv"
             )
-
-            st.altair_chart(bar_chart, use_container_width=True)
-
-        else:
-            st.warning("Please select a variable for comparison.")
