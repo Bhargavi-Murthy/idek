@@ -164,22 +164,18 @@ if file1 and file2:
  
         # Iterate through each common column to calculate totals and differences
         for var in common_columns:
-            st.write(var)
             total_file1 = merged_df[f"{var}_file1"].sum()
-            st.write(total_file1)
             total_file2 = merged_df[f"{var}_file2"].sum()
-            st.write(total_file2)
             absolute_change = total_file2 - total_file1
             percentage_change = (absolute_change / total_file1 * 100) if total_file1 != 0 else None  # Avoid division by zero
         # Append the results as a dictionary
-        comparison_data.append({
-            "Variable": var,
-            "Total (File 1)": total_file1,
-            "Total (File 2)": total_file2,
-            "Absolute Change": absolute_change,
-            "Percentage Change (%)": percentage_change
-        })
-        st.write(comparison_data)
+            comparison_data.append({
+             "Variable": var,
+             "Total (File 1)": total_file1,
+             "Total (File 2)": total_file2,
+             "Absolute Change": absolute_change,
+             "Percentage Change (%)": percentage_change
+          })
  
         # Convert the list of dictionaries to a DataFrame
         comparison_table = pd.DataFrame(comparison_data)
@@ -192,7 +188,7 @@ if file1 and file2:
  
         # Display results
         st.subheader("ADS Comparison Results")
-        st.write(comparison_table)
+        st.write(filtered_comparison)
         variable_list_2 = filtered_comparison["Variable"].tolist()
  
         
