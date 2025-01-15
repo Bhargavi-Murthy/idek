@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
+import matplotlib.pyplot as plt
  
 # App title and heading
 st.set_page_config(page_title="Data Comparison App", layout="wide")
