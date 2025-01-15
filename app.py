@@ -188,7 +188,7 @@ if file1 and file2:
  
         # Display results
         st.subheader("ADS Comparison Results")
-        st.write(filtered_comparison)
+        st.write(comparison_table)
         variable_list_2 = filtered_comparison["Variable"].tolist()
  
         
