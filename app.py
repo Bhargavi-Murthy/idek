@@ -130,7 +130,7 @@ if file1 and file2:
                 st.altair_chart(bar_chart, use_container_width=True)
  
             # Allow download of comparison results
-            csv = comparison_results.to_csv(index=False)
+            csv = filtered_results.to_csv(index=False)
             st.download_button(
                 label="Download Comparison Results",
                 data=csv,
